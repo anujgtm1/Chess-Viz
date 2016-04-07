@@ -1,4 +1,6 @@
 from PIL import Image
+import ImageDraw
+from itertools import cycle
 
 
 def getPieces(path, gHeight, gWidth):
@@ -27,8 +29,6 @@ def assignPieces(set, pattern):
 
 def drawBoard(n=8, pixel_width=500):
     "Draw an n x n chessboard using PIL."
-    import Image, ImageDraw
-    from itertools import cycle
 
     def sq_start(i):
         "Return the x/y start coord of the square at column/row i."
@@ -49,7 +49,33 @@ def drawBoard(n=8, pixel_width=500):
     return image
 
 
-def convert(x, y, board_width, piece_width):
+def highlightSquare(board, square):
+    # highlight the given square
+    # board is the board image
+    # square is the board coordinate in algebric form
+    boxSize = board.size[0]/8.0
+    if type(square) == str:
+        square = (ord(square[0]) - 97, 8 - int(square[1]))
+    box = [square[0], square[1], square[0]+1, square[1]+1]
+    box = [boxSize * x for x in box]
+    if (square[0] + square[1]) % 2 == 1:
+        ImageDraw.Draw(board).rectangle(box, fill=(0, 100, 0))
+    else:
+        ImageDraw.Draw(board).rectangle(box, fill=(180, 180, 180))
+    return board
+
+def highlightElement(board, element):
+    e1 = (ord(element[0][0]) - 97, 8 - int(elmenet[0][1]))
+    e2 = (ord(element[1][0]) - 97, 8 - int(elmenet[1][1]))
+    if e1[0] == e2[0]:
+        for i in range(e1[1], e2[1]):
+            highlightSquare(board, [e1[0], i])
+    elif e1[1] == e2[1]:
+        for i in range(e1[0], e2[0]):
+            highlightSquare(board, [i, e1[1]])
+    return
+
+def convertPiece(x, y, board_width, piece_width):
     x = x * board_width/8 + 0.1 * board_width/8
     y = y * board_width/8 + 0.1 * board_width/8
     box = tuple(map(int, (x, y, x+piece_width, y+piece_width)))
@@ -71,12 +97,13 @@ def readFEN(fen):
 
 
 def setBoard(board, pieces, fen):
-    bSize = board.size[0]
+    nBoard = board
+    bSize = nBoard.size[0]
     pSize = pieces['Q'].size[0]
     for i in range(0, 8):
         for j in range(0, 8):
             if fen[i][j] != '.':
                 piece = pieces[fen[i][j]]
-                board.paste(piece, convert(j, i, bSize, pSize), mask=piece)
-    board.show()
-    return board
+                nBoard.paste(piece, convertPiece(j, i, bSize, pSize), mask=piece)
+    nBoard.show()
+    return nBoard
